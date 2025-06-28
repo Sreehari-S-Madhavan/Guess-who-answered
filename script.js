@@ -4,14 +4,20 @@ let players = [];
 let scores = {};
 let answers = [];
 let currentRoundAnswer = null;
+let currentAnsweringPlayerIndex = 0;
+let round = 1;
+const MAX_ROUNDS = 5;
 
-// Load questions from JSON
+// Random emoji avatar for each player
+const playerAvatars = {};
+const emojiList = ['🐱','🐶','🦊','🐵','🐯','🐸','🐼','🐧','🦁','🐻','🐨'];
+
 async function loadQuestions() {
   const response = await fetch("questions.json");
   questions = await response.json();
 }
 
-// Player joins lobby
+// Join the lobby
 document.getElementById("join-btn").addEventListener("click", () => {
   const nameInput = document.getElementById("lobby-name");
   const name = nameInput.value.trim();
@@ -19,9 +25,10 @@ document.getElementById("join-btn").addEventListener("click", () => {
 
   players.push(name);
   scores[name] = 0;
+  playerAvatars[name] = emojiList[Math.floor(Math.random() * emojiList.length)];
 
   const li = document.createElement("li");
-  li.textContent = name;
+  li.textContent = `${playerAvatars[name]} ${name}`;
   document.getElementById("player-names").appendChild(li);
 
   nameInput.value = "";
@@ -31,49 +38,62 @@ document.getElementById("join-btn").addEventListener("click", () => {
   }
 });
 
-// Start the game
+// Start game
 document.getElementById("start-game").addEventListener("click", () => {
   document.getElementById("lobby-screen").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
   loadNextQuestion();
 });
 
-// Load a random question
+// Load next question
 function loadNextQuestion() {
+  if (round > MAX_ROUNDS) {
+    endGame();
+    return;
+  }
+
   const randomIndex = Math.floor(Math.random() * questions.length);
   currentQuestion = questions[randomIndex];
   document.getElementById("question").textContent = currentQuestion.question;
+  document.getElementById("round-count").textContent = round;
 
   answers = [];
   currentRoundAnswer = null;
+  currentAnsweringPlayerIndex = 0;
+
   document.getElementById("answer-form").classList.remove("hidden");
-  document.getElementById("answer-form").reset();
   document.getElementById("guess-section").classList.add("hidden");
   document.getElementById("next-round").classList.add("hidden");
-  document.getElementById("scoreboard").classList.remove("hidden");
+  document.getElementById("final-winner").classList.add("hidden");
+  updateCurrentPlayerTurn();
   updateScoreboard();
 }
 
-// Collect answers from each player
+function updateCurrentPlayerTurn() {
+  const player = players[currentAnsweringPlayerIndex];
+  document.getElementById("current-player-turn").textContent = `✏️ ${playerAvatars[player]} ${player}, it’s your turn to answer.`;
+  document.getElementById("answer").placeholder = `Your answer, ${player}`;
+}
+
 document.getElementById("answer-form").addEventListener("submit", (e) => {
   e.preventDefault();
+
   const answerText = document.getElementById("answer").value.trim();
   if (!answerText) return;
 
-  // Assign in order
-  const answerer = players[answers.length];
-  answers.push({ answer: answerText, name: answerer });
+  const playerName = players[currentAnsweringPlayerIndex];
+  answers.push({ name: playerName, answer: answerText });
 
+  currentAnsweringPlayerIndex++;
   document.getElementById("answer-form").reset();
 
-  if (answers.length >= players.length) {
-    startGuessingPhase();
+  if (currentAnsweringPlayerIndex < players.length) {
+    updateCurrentPlayerTurn();
   } else {
-    document.getElementById("answer").placeholder = `Waiting for ${players[answers.length]} to answer...`;
+    startGuessingPhase();
   }
 });
 
-// Show 1 random answer and guess who
 function startGuessingPhase() {
   document.getElementById("answer-form").classList.add("hidden");
   document.getElementById("guess-section").classList.remove("hidden");
@@ -82,13 +102,13 @@ function startGuessingPhase() {
   currentRoundAnswer = answers[randomIndex];
   document.getElementById("revealed-answer").textContent = currentRoundAnswer.answer;
 
-  const shuffledNames = players.sort(() => 0.5 - Math.random());
+  const shuffled = [...players].sort(() => 0.5 - Math.random());
   const optionsDiv = document.getElementById("options");
   optionsDiv.innerHTML = "";
 
-  shuffledNames.forEach(name => {
+  shuffled.forEach(name => {
     const btn = document.createElement("button");
-    btn.textContent = name;
+    btn.textContent = `${playerAvatars[name]} ${name}`;
     btn.className = "guess-btn";
     btn.onclick = () => checkAnswer(name, currentRoundAnswer.name);
     optionsDiv.appendChild(btn);
@@ -103,7 +123,7 @@ function checkAnswer(selectedName, correctName) {
     result.style.color = "limegreen";
     scores[selectedName]++;
   } else {
-    result.textContent = `❌ Wrong! It was ${correctName}.`;
+    result.textContent = `❌ Wrong! It was ${playerAvatars[correctName]} ${correctName}.`;
     result.style.color = "red";
   }
 
@@ -113,6 +133,7 @@ function checkAnswer(selectedName, correctName) {
 }
 
 document.getElementById("next-round").addEventListener("click", () => {
+  round++;
   document.getElementById("result").textContent = "";
   loadNextQuestion();
 });
@@ -124,9 +145,23 @@ function updateScoreboard() {
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   sorted.forEach(([name, score]) => {
     const li = document.createElement("li");
-    li.textContent = `${name}: ${score} pts`;
+    li.textContent = `${playerAvatars[name]} ${name}: ${score} pts`;
     list.appendChild(li);
   });
+
+  document.getElementById("scoreboard").classList.remove("hidden");
+}
+
+function endGame() {
+  document.getElementById("guess-section").classList.add("hidden");
+  document.getElementById("answer-form").classList.add("hidden");
+  document.getElementById("next-round").classList.add("hidden");
+
+  const maxScore = Math.max(...Object.values(scores));
+  const winners = Object.keys(scores).filter(name => scores[name] === maxScore);
+
+  document.getElementById("final-winner").classList.remove("hidden");
+  document.getElementById("winner-name").textContent = `🏅 ${winners.map(w => `${playerAvatars[w]} ${w}`).join(', ')} won the game with ${maxScore} points!`;
 }
 
 loadQuestions();
