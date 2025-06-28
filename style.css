@@ -1,209 +1,88 @@
-/* Base Reset */
-* {
-  box-sizing: border-box;
+body {
   margin: 0;
   padding: 0;
-}
-
-/* Body Background */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(120deg, #00c6ff, #0072ff);
   color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-/* Card Container */
 .glass-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 2rem;
-  width: 100%;
   max-width: 600px;
+  width: 90%;
+  backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.8s ease;
 }
 
-/* Fade-in animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* Headings */
-h1, h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-/* Question box */
-#question-box {
-  font-size: 1.2rem;
-  background: rgba(255, 255, 255, 0.25);
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1rem;
-  color: #222;
-  text-align: center;
-}
-
-/* Form styling */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  margin-bottom: 1rem;
-}
-
-input {
-  padding: 0.7rem;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  background: #fff9;
-  color: #222;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-input::placeholder {
-  color: #777;
-}
-
-/* Submit Button */
-button {
-  padding: 0.7rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(to right, #4facfe, #00f2fe);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Revealed answer display */
-.revealed {
-  font-size: 1.3rem;
-  font-weight: bold;
-  margin: 1rem 0;
-  background: rgba(255, 255, 255, 0.25);
-  padding: 1rem;
-  border-radius: 12px;
-  color: #222;
-  text-align: center;
-}
-
-/* Guess buttons */
-#options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-#options button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  border-radius: 12px;
-  background: linear-gradient(to right, #43e97b, #38f9d7);
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s;
-  border: none;
-}
-
-#options button:hover {
-  transform: scale(1.05);
-}
-
-/* Result message */
-.result {
-  margin-top: 1rem;
-  font-weight: bold;
-  font-size: 1.2rem;
-  text-align: center;
-}
-
-/* Next Round button */
-#next-round {
-  margin: 1rem auto 0;
-  padding: 0.7rem 1.4rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(to right, #667eea, #764ba2);
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  display: block;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-#next-round:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Scoreboard Section */
-#scoreboard {
-  margin-top: 2rem;
-}
-
-#score-list {
-  list-style: none;
-  padding: 0;
-}
-
-#score-list li {
-  background: rgba(255, 255, 255, 0.25);
-  color: #222;
-  padding: 0.6rem 1rem;
-  margin: 0.4rem 0;
-  border-radius: 10px;
-  font-weight: bold;
-  text-align: center;
-}
-
-#lobby-screen input {
+input[type="text"], button {
   padding: 0.7rem;
   margin-top: 1rem;
   border-radius: 10px;
   font-size: 1rem;
   width: 100%;
   max-width: 300px;
-  background: #fff9;
-  color: #222;
   border: none;
 }
 
-#players-list {
-  margin-top: 1rem;
+input[type="text"] {
+  background: #fff9;
+  color: #000;
 }
 
-#player-names {
-  list-style: none;
-  padding: 0;
-  margin-top: 0.5rem;
+button {
+  background-color: #00d2ff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
-#player-names li {
+button:hover {
+  background-color: #0077b6;
+}
+
+.hidden {
+  display: none;
+}
+
+#player-names li, #score-list li {
   background: rgba(255,255,255,0.2);
   padding: 0.5rem 1rem;
   margin: 0.2rem 0;
   border-radius: 10px;
   font-weight: bold;
-  color: #222;
+  color: #fff;
 }
 
+.revealed {
+  font-size: 1.3rem;
+  color: #ffeb3b;
+  margin: 1rem 0;
+}
+
+.result {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+#vote-options button {
+  background-color: #ffffff22;
+  margin: 0.3rem;
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+#vote-options button.selected {
+  background-color: #4caf50;
+  color: #fff;
+  font-weight: bold;
+}
