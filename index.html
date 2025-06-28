@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🎯 Guess Who Said It</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="glass-card">
@@ -26,7 +26,7 @@
     <div id="game-screen" class="hidden">
       <h1>🎯 Guess Who Said It</h1>
 
-      <div id="round-status"><strong>Round:</strong> <span id="round-count">1</span></div>
+      <div id="round-status"><strong>Round:</strong> <span id="round-count">1</span> / 5</div>
 
       <div id="question-box">
         <p id="question">Loading question...</p>
@@ -41,7 +41,11 @@
       <div id="guess-section" class="hidden">
         <h2>🕵️ Who said this?</h2>
         <p id="revealed-answer" class="revealed"></p>
-        <div id="options"></div>
+
+        <div id="vote-instruction">Select who you think said it (you can select multiple)</div>
+        <div id="vote-options"></div>
+
+        <button id="submit-vote" class="hidden">Submit Vote</button>
         <p id="result" class="result"></p>
         <button id="next-round" class="hidden">➡️ Next Round</button>
       </div>
