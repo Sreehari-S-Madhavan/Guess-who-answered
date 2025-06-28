@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎯 Guess Who Said It</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="glass-card">
+
+    <div id="lobby-screen">
+      <h1>🎮 Local Multiplayer Lobby</h1>
+      <input type="text" id="lobby-name" placeholder="Enter your name..." />
+      <button id="join-btn">Join Lobby</button>
+      <div id="players-list">
+        <h2>🧑 Players:</h2>
+        <ul id="player-names"></ul>
+      </div>
+      <button id="start-game" class="hidden">🚀 Start Game</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+      <h1>🎯 Guess Who Said It</h1>
+      <div id="question-box">
+        <p id="question">Loading question...</p>
+      </div>
+
+      <form id="answer-form">
+        <input type="text" id="answer" placeholder="💬 Type your answer..." required />
+        <button type="submit">Submit Answer</button>
+      </form>
+
+      <div id="guess-section" class="hidden">
+        <h2>🕵️ Who said this?</h2>
+        <p id="revealed-answer" class="revealed"></p>
+        <div id="options"></div>
+        <p id="result" class="result"></p>
+        <button id="next-round" class="hidden">➡️ Next Round</button>
+      </div>
+
+      <div id="scoreboard" class="hidden">
+        <h2>🏆 Scoreboard</h2>
+        <ul id="score-list"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
