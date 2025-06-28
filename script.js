@@ -1,15 +1,14 @@
 let questions = [];
-let currentQuestion = {};
 let players = [];
 let scores = {};
+let playerAvatars = {};
 let answers = [];
-let currentRoundAnswer = null;
-let currentAnsweringPlayerIndex = 0;
-let round = 1;
+let currentRound = 1;
 const MAX_ROUNDS = 5;
+let answerAuthors = [];
+let currentAnswer = null;
+let votes = {};
 
-// Random emoji avatar for each player
-const playerAvatars = {};
 const emojiList = ['🐱','🐶','🦊','🐵','🐯','🐸','🐼','🐧','🦁','🐻','🐨'];
 
 async function loadQuestions() {
@@ -17,151 +16,168 @@ async function loadQuestions() {
   questions = await response.json();
 }
 
-// Join the lobby
-document.getElementById("join-btn").addEventListener("click", () => {
-  const nameInput = document.getElementById("lobby-name");
-  const name = nameInput.value.trim();
-  if (!name || players.includes(name)) return;
+function updateScoreboard() {
+  const scoreList = document.getElementById("score-list");
+  scoreList.innerHTML = "";
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  sorted.forEach(([name, score]) => {
+    const li = document.createElement("li");
+    li.textContent = `${playerAvatars[name]} ${name}: ${score} pts`;
+    scoreList.appendChild(li);
+  });
+  document.getElementById("scoreboard").classList.remove("hidden");
+}
 
+function showFinalWinner() {
+  const maxScore = Math.max(...Object.values(scores));
+  const winners = Object.keys(scores).filter(name => scores[name] === maxScore);
+  document.getElementById("final-winner").classList.remove("hidden");
+  document.getElementById("winner-name").textContent = `🏅 ${winners.map(w => `${playerAvatars[w]} ${w}`).join(', ')} won with ${maxScore} points!`;
+}
+
+function loadNextQuestion() {
+  if (currentRound > MAX_ROUNDS) {
+    document.getElementById("guess-section").classList.add("hidden");
+    document.getElementById("answer-form").classList.add("hidden");
+    showFinalWinner();
+    return;
+  }
+
+  const randomQ = questions[Math.floor(Math.random() * questions.length)];
+  document.getElementById("question").textContent = randomQ.question;
+  document.getElementById("round-count").textContent = currentRound;
+
+  answers = [];
+  answerAuthors = [];
+  currentAnswer = null;
+  votes = {};
+
+  document.getElementById("answer-form").classList.remove("hidden");
+  document.getElementById("guess-section").classList.add("hidden");
+  document.getElementById("next-round").classList.add("hidden");
+  document.getElementById("result").textContent = "";
+  document.getElementById("answer").value = "";
+  document.getElementById("current-player-turn").textContent = `All players answer.`;
+  document.getElementById("vote-options").innerHTML = "";
+  document.getElementById("submit-vote").classList.add("hidden");
+}
+
+function processVoting() {
+  // Calculate votes
+  const voteCounts = {};
+  Object.values(votes).forEach(selected => {
+    selected.forEach(name => {
+      voteCounts[name] = (voteCounts[name] || 0) + 1;
+    });
+  });
+
+  const totalVotes = Object.values(votes).reduce((sum, arr) => sum + arr.length, 0);
+  const majorityThreshold = Math.floor(totalVotes / 2) + 1;
+  let correctVotes = 0;
+
+  for (const [voter, selected] of Object.entries(votes)) {
+    selected.forEach(name => {
+      if (answerAuthors.includes(name)) {
+        scores[voter] += 2;
+        correctVotes++;
+      }
+    });
+  }
+
+  const correctVoteCount = answerAuthors.reduce((sum, name) => sum + (voteCounts[name] || 0), 0);
+  const authorGetsPoints = correctVoteCount < majorityThreshold;
+  answerAuthors.forEach(name => {
+    if (authorGetsPoints) scores[name] += 3;
+  });
+
+  const resultText = `✅ ${correctVotes} correct votes. ${authorGetsPoints ? 'Authors get +3!' : 'Authors got majority, no points!'}`;
+  document.getElementById("result").textContent = resultText;
+  document.getElementById("next-round").classList.remove("hidden");
+  updateScoreboard();
+}
+
+function setupVoting() {
+  const others = players.filter(p => !answerAuthors.includes(p));
+  const voteBox = document.getElementById("vote-options");
+  others.forEach(name => {
+    const btn = document.createElement("button");
+    btn.textContent = `${playerAvatars[name]} ${name}`;
+    btn.onclick = () => {
+      btn.classList.toggle("selected");
+    };
+    voteBox.appendChild(btn);
+  });
+  document.getElementById("submit-vote").classList.remove("hidden");
+}
+
+function startVotingPhase() {
+  document.getElementById("answer-form").classList.add("hidden");
+  document.getElementById("guess-section").classList.remove("hidden");
+
+  const allAnswers = answers.map(a => a.answer);
+  const randomAnswer = allAnswers[Math.floor(Math.random() * allAnswers.length)];
+  document.getElementById("revealed-answer").textContent = randomAnswer;
+
+  // Determine all authors of that answer
+  answerAuthors = answers.filter(a => a.answer === randomAnswer).map(a => a.name);
+  setupVoting();
+}
+
+function submitAnswer(name, text) {
+  answers.push({ name, answer: text });
+  if (answers.length === players.length) {
+    startVotingPhase();
+  }
+}
+
+// Event listeners
+
+document.getElementById("join-btn").addEventListener("click", () => {
+  const name = document.getElementById("lobby-name").value.trim();
+  if (!name || players.includes(name)) return;
   players.push(name);
   scores[name] = 0;
   playerAvatars[name] = emojiList[Math.floor(Math.random() * emojiList.length)];
-
   const li = document.createElement("li");
   li.textContent = `${playerAvatars[name]} ${name}`;
   document.getElementById("player-names").appendChild(li);
-
-  nameInput.value = "";
-
-  if (players.length >= 3) {
-    document.getElementById("start-game").classList.remove("hidden");
-  }
+  document.getElementById("lobby-name").value = "";
+  if (players.length >= 3) document.getElementById("start-game").classList.remove("hidden");
 });
 
-// Start game
 document.getElementById("start-game").addEventListener("click", () => {
   document.getElementById("lobby-screen").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
   loadNextQuestion();
 });
 
-// Load next question
-function loadNextQuestion() {
-  if (round > MAX_ROUNDS) {
-    endGame();
-    return;
-  }
-
-  const randomIndex = Math.floor(Math.random() * questions.length);
-  currentQuestion = questions[randomIndex];
-  document.getElementById("question").textContent = currentQuestion.question;
-  document.getElementById("round-count").textContent = round;
-
-  answers = [];
-  currentRoundAnswer = null;
-  currentAnsweringPlayerIndex = 0;
-
-  document.getElementById("answer-form").classList.remove("hidden");
-  document.getElementById("guess-section").classList.add("hidden");
-  document.getElementById("next-round").classList.add("hidden");
-  document.getElementById("final-winner").classList.add("hidden");
-  updateCurrentPlayerTurn();
-  updateScoreboard();
-}
-
-function updateCurrentPlayerTurn() {
-  const player = players[currentAnsweringPlayerIndex];
-  document.getElementById("current-player-turn").textContent = `✏️ ${playerAvatars[player]} ${player}, it’s your turn to answer.`;
-  document.getElementById("answer").placeholder = `Your answer, ${player}`;
-}
-
 document.getElementById("answer-form").addEventListener("submit", (e) => {
   e.preventDefault();
-
-  const answerText = document.getElementById("answer").value.trim();
-  if (!answerText) return;
-
-  const playerName = players[currentAnsweringPlayerIndex];
-  answers.push({ name: playerName, answer: answerText });
-
-  currentAnsweringPlayerIndex++;
-  document.getElementById("answer-form").reset();
-
-  if (currentAnsweringPlayerIndex < players.length) {
-    updateCurrentPlayerTurn();
-  } else {
-    startGuessingPhase();
-  }
+  const text = document.getElementById("answer").value.trim();
+  if (!text) return;
+  const name = players[answers.length];
+  submitAnswer(name, text);
+  document.getElementById("answer").value = "";
 });
 
-function startGuessingPhase() {
-  document.getElementById("answer-form").classList.add("hidden");
-  document.getElementById("guess-section").classList.remove("hidden");
-
-  const randomIndex = Math.floor(Math.random() * answers.length);
-  currentRoundAnswer = answers[randomIndex];
-  document.getElementById("revealed-answer").textContent = currentRoundAnswer.answer;
-
-  const shuffled = [...players].sort(() => 0.5 - Math.random());
-  const optionsDiv = document.getElementById("options");
-  optionsDiv.innerHTML = "";
-
-  shuffled.forEach(name => {
-    const btn = document.createElement("button");
-    btn.textContent = `${playerAvatars[name]} ${name}`;
-    btn.className = "guess-btn";
-    btn.onclick = () => checkAnswer(name, currentRoundAnswer.name);
-    optionsDiv.appendChild(btn);
-  });
-}
-
-function checkAnswer(selectedName, correctName) {
-  const result = document.getElementById("result");
-
-  if (selectedName === correctName) {
-    result.textContent = "✅ Correct! 🎉";
-    result.style.color = "limegreen";
-    scores[selectedName]++;
+document.getElementById("submit-vote").addEventListener("click", () => {
+  const currentVoter = players.find(p => !answerAuthors.includes(p) && !(p in votes));
+  const selectedButtons = Array.from(document.querySelectorAll("#vote-options .selected"));
+  const selectedNames = selectedButtons.map(btn => btn.textContent.split(" ")[1]);
+  if (!currentVoter || selectedNames.length === 0) return;
+  votes[currentVoter] = selectedNames;
+  document.getElementById("vote-options").innerHTML = "";
+  document.getElementById("submit-vote").classList.add("hidden");
+  if (Object.keys(votes).length === players.length - answerAuthors.length) {
+    processVoting();
   } else {
-    result.textContent = `❌ Wrong! It was ${playerAvatars[correctName]} ${correctName}.`;
-    result.style.color = "red";
+    setupVoting();
   }
-
-  document.querySelectorAll(".guess-btn").forEach(btn => btn.disabled = true);
-  document.getElementById("next-round").classList.remove("hidden");
-  updateScoreboard();
-}
+});
 
 document.getElementById("next-round").addEventListener("click", () => {
-  round++;
-  document.getElementById("result").textContent = "";
+  currentRound++;
   loadNextQuestion();
 });
-
-function updateScoreboard() {
-  const list = document.getElementById("score-list");
-  list.innerHTML = "";
-
-  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  sorted.forEach(([name, score]) => {
-    const li = document.createElement("li");
-    li.textContent = `${playerAvatars[name]} ${name}: ${score} pts`;
-    list.appendChild(li);
-  });
-
-  document.getElementById("scoreboard").classList.remove("hidden");
-}
-
-function endGame() {
-  document.getElementById("guess-section").classList.add("hidden");
-  document.getElementById("answer-form").classList.add("hidden");
-  document.getElementById("next-round").classList.add("hidden");
-
-  const maxScore = Math.max(...Object.values(scores));
-  const winners = Object.keys(scores).filter(name => scores[name] === maxScore);
-
-  document.getElementById("final-winner").classList.remove("hidden");
-  document.getElementById("winner-name").textContent = `🏅 ${winners.map(w => `${playerAvatars[w]} ${w}`).join(', ')} won the game with ${maxScore} points!`;
-}
 
 loadQuestions();
